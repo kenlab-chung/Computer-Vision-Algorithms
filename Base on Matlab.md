@@ -177,5 +177,91 @@ plot([3.56994567,3.56994567],[0 1],'g--');
 运行这段代码，如下图所示，Logistic混沌序列分布区间在(0,1)，其与分支参数&#956;具有明显的关联。当&#956; &le; 3时（红色虚线），迭代结果趋于稳定；然后随着&#956;的增加结果越来越分散；当&#956; &ge; 3.56994567时（绿色虚线），迭代结果不收敛，呈现混沌状态。同时，在分支参数&#956;和初始值确定的情况下，Logistic混沌序列也具有确定性，适合做加密参数。
 ![image](https://github.com/kenlab-chung/Computer-Vision-Algorithms/assets/59462735/5c8c22d0-bc44-410b-b138-7411be695dd0)
 
+## 4 基于光流场的交通流量分析
+关键代码
+```
+clear 
+close all
+clc
+
+video_file = "demo.mp4";
+
+info= mmfileinfo(video_file);
+cols = info.Video.Width;
+rows = info.Video.Height;
+
+vid  = VideoReader(video_file);
+hFlow = opticalFlowHS; %Horn-Schunck 光流对象
+hmean1= vision.Mean; %当前均值
+hmean2 = vision.Mean('RunningMean',true); %累计平均值
+
+hFilter = fspecial("average",[3 3]); %均值滤波对象
+
+%形态学滤波对象
+hClose = strel('line',5,45);
+hErode = strel('square',5);
+
+%车辆筛选对象
+hBlob = vision.BlobAnalysis( ...
+    'CentroidOutputPort',false,...
+    'AreaOutputPort',true,...
+    'BoundingBoxOutputPort',true,...
+    'OutputDataType','double', ...
+    'MinimumBlobArea',250,...
+    'MaximumBlobArea',3600,...
+    'MaximumCount',80);
+
+hShape1 = vision.ShapeInserter(...
+    'BorderColor','Custom',...
+    'CustomBorderColor',[255 0 0]);
+
+hShape2 = vision.ShapeInserter(...
+    'Shape','Lines',...
+    'BorderColor','Custom',...
+    'CustomBorderColor',[255 255 0]);
+virtul_loc =22;
+fd = fullfile(pwd,'tmp');
+if ~exist(fd,'dir')
+    mkdir(fd)
+end
+
+%显示流光矢量的像素点
+[xpos,ypos] = meshgrid(1:5:cols,1:5:rows);
+xpos =xpos(:);
+ypos = ypos(:);
+locs = sub2ind([rows,cols],ypos,xpos);
+k=0;
+while hasFrame(vid)
+    k = k + 1;
+    img = readFrame(vid);
+    gray = rgb2gray(img);
+    flow = estimateFlow(hFlow,gray);
+    lines = [xpos,ypos,xpos+20*real(flow.Vx(locs)),ypos+20*real(flow.Vx(locs))];
+    img_flow = step(hShape2,single(img),lines);
+    magnitude = flow.Magnitude;
+    threshold = 1* step(hmean2,step(hmean1,magnitude));
+    carobj = magnitude>=threshold;
+    carobj = imfilter(carobj,hFilter,'replicate');
+    carobj = imerode(carobj,hErode);
+    carobj = imclose(carobj,hClose);
+    carobj(end -5:end,:) = 0;
+    carobj(:,[1:5 end-5 end]) = 0;
+    [area,bbox] = step(hBlob,carobj);
+    idx = bbox(:,2) + bbox(:,4)*0.5>virtul_loc;
+    ratio = zeros(length(idx),1);
+    ratio(idx) = single(area(idx,1))./single(bbox(idx,3).*bbox(idx,4));
+    flag  = ratio >0.4;
+    count(k) = sum(flag);
+    bbox(~flag,:) = int32(-1);
+    img_car = step(hShape1,single(img),bbox);
+    img_car(virtul_loc-1:virtul_loc+1,:,:)=255;
+    img_car = insertText(mat2gray(img_car),[1 1],sprintf('%d',count(k)),'TextColor','w','FontSize',11);
+    imwrite(mat2gray(img_flow),fullfile(fd,sprintf('%03d.png',k)));
+    imwrite(mat2gray(img_car),fullfile(fd,sprintf('%03d.jpg',k)));
+    imshow(img_flow);
+    imshow(img_car);
+end
+```
+
 
 
