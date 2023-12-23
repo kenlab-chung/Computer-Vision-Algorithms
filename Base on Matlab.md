@@ -139,4 +139,40 @@ title('Enhanced Image');
 ## 3.1 Logistic 混沌系统
 混沌现象是指发生在一个确定性系统中貌似随机的不规则运动，具有不确定性、不可重复、不可预测的行为特点，是非线性动力系统中固有特性。混沌系统一个典型特点是演变过程对初始状态十分敏感。
 ```
+%模拟logistic混沌序列
+%研究表名分支参数在[3.56994567,4]时，Logistic映射才具有混沌性质
+clear
+close all
+clc
+
+figure;hold on;box on;
+title('Logistic 映射仿真')
+
+xlabel('分支参数\mu')
+ylabel('序列\{xn\}')
+
+%分支参数范围0～4，xn范围0～1
+axis([0,4,0,1]);
+us = linspace(0,4,5e2);
+%迭代计算序列xn
+for i =1:length(us)
+    x = [];
+    %设置随机初始值
+    x(1) = abs(rand(1));
+    u = us(i);
+    for n = 1:1.5e2
+        %按公式计算
+        x(n+1) = u*x(n)*(1-x(n));
+    end
+    %设置对应绘制的序列
+    u = repmat(u,1,length(x));
+    plot(u(1e2:1.5e2),x(1e2:1.5e2),'k.','markersize',3);
+    %刷新显示
+    pause(1e-3);
+end
+plot([3,3],'r--');
+plot([3.56994567,3.56994567],[0 1],'g--');
 ```
+图像如下所示：
+![image](https://github.com/kenlab-chung/Computer-Vision-Algorithms/assets/59462735/7c4af71c-14d9-4c82-9795-68e950dd56f5)
+
