@@ -170,9 +170,13 @@ for i =1:length(us)
     %刷新显示
     pause(1e-3);
 end
-plot([3,3],'r--');
+plot([3,3],[0 1],'r--');
 plot([3.56994567,3.56994567],[0 1],'g--');
+
 ```
 图像如下所示：
-![image](https://github.com/kenlab-chung/Computer-Vision-Algorithms/assets/59462735/7c4af71c-14d9-4c82-9795-68e950dd56f5)
+
+![image](https://github.com/kenlab-chung/Computer-Vision-Algorithms/assets/59462735/5c8c22d0-bc44-410b-b138-7411be695dd0)
+
+
 
